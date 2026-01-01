@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catch Mania!</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #1e1e2f, #3e3e5e);
+      overflow: hidden;
+    }
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    #player {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      width: 80px;
+      height: 20px;
+      background: #ff6b6b;
+      transform: translateX(-50%);
+      border-radius: 5px;
+    }
+    .falling {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+    }
+    .normal { background: #4ecdc4; } /* +1 skor */
+    .bonus { background: #ffe66d; width: 40px; height: 40px; } /* +5 skor */
+    .trap { background: #ff3b3b; width: 35px; height: 35px; } /* -3 skor */
+    #score, #level {
+      position: absolute;
+      top: 10px;
+      color: #fff;
+      font-size: 24px;
+    }
+    #level { left: auto; right: 10px; }
+    #controls {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+    }
+    .btn {
+      width: 80px;
+      height: 60px;
+      background: #ff6b6b;
+      color: #fff;
+      font-size: 24px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="player"></div>
+    <div id="score">Score: 0</div>
+    <div id="level">Level: 1</div>
+    <div id="controls">
+      <div class="btn" id="left">◀</div>
+      <div class="btn" id="right">▶</div>
+    </div>
+  </div>
+
+  <script>
+    const game = document.getElementById('game');
+    const player = document.getElementById('player');
+    const scoreDisplay = document.getElementById('score');
+    const levelDisplay = document.getElementById('level');
+    const btnLeft = document.getElementById('left');
+    const btnRight = document.getElementById('right');
+
+    let playerPos = window.innerWidth / 2 - 40;
+    let score = 0;
+    let level = 1;
+    let moveSpeed = 12;
+    let moveLeft = false;
+    let moveRight = false;
+
+    btnLeft.addEventListener('touchstart', () => moveLeft = true);
+    btnLeft.addEventListener('touchend', () => moveLeft = false);
+    btnRight.addEventListener('touchstart', () => moveRight = true);
+    btnRight.addEventListener('touchend', () => moveRight = false);
+
+    function movePlayer() {
+      if (moveLeft) playerPos -= moveSpeed;
+      if (moveRight) playerPos += moveSpeed;
+
+      if (playerPos < 0) playerPos = 0;
+      if (playerPos > window.innerWidth - 80) playerPos = window.innerWidth - 80;
+
+      player.style.left = playerPos + 'px';
+      requestAnimationFrame(movePlayer);
+    }
+    movePlayer();
+
+    function createFallingObject() {
+      const obj = document.createElement('div');
+      const typeRand = Math.random();
+      if (typeRand < 0.7) obj.classList.add('falling', 'normal');
+      else if (typeRand < 0.85) obj.classList.add('falling', 'bonus');
+      else obj.classList.add('falling', 'trap');
+
+      obj.style.left = Math.random() * (window.innerWidth - 40) + 'px';
+      obj.style.top = '0px';
+      game.appendChild(obj);
+
+      const fallSpeed = 2 + Math.random() * level * 0.5; // kecepatan naik tiap level
+
+      function fall() {
+        const objTop = parseFloat(obj.style.top);
+        const objLeft = parseFloat(obj.style.left);
+        const objWidth = obj.offsetWidth;
+
+        if (objTop + obj.offsetHeight >= window.innerHeight - 60 &&
+            objLeft + objWidth > playerPos && objLeft < playerPos + 80) {
+
+          // Cek tipe
+          if (obj.classList.contains('normal')) score += 1;
+          else if (obj.classList.contains('bonus')) score += 5;
+          else if (obj.classList.contains('trap')) score -= 3;
+
+          if (score < 0) score = 0;
+
+          scoreDisplay.textContent = 'Score: ' + score;
+
+          // Level naik tiap 10 skor
+          level = Math.floor(score / 10) + 1;
+          levelDisplay.textContent = 'Level: ' + level;
+
+          game.removeChild(obj);
+        } else if (objTop + obj.offsetHeight >= window.innerHeight) {
+          game.removeChild(obj);
+        } else {
+          obj.style.top = objTop + fallSpeed + 'px';
+          requestAnimationFrame(fall);
+        }
+      }
+      fall();
+    }
+
+    setInterval(createFallingObject, 800);
+
+  </script>
+</body>
+</html>
